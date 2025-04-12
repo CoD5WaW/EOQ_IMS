@@ -1,0 +1,69 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Delete Product: {{ object.product_name }} | EOQ IMS{% endblock %}
+
+{% block header_title %}Delete Product: {{ object.product_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a href="{% url 'inventory:product-detail' object.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Product
+            </a>
+        </div>
+        
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Confirm Deletion</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle me-2"></i> Warning: This action cannot be undone.
+                </div>
+                
+                <h5>Are you sure you want to delete the following product?</h5>
+                
+                <div class="mt-4 p-3 bg-light rounded">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Product ID:</strong> {{ object.product_id }}</p>
+                            <p><strong>Product Name:</strong> {{ object.product_name }}</p>
+                            <p><strong>Category:</strong> {{ object.category|default:"Uncategorized" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Unit Cost:</strong> ${{ object.unit_cost }}</p>
+                            <p><strong>Selling Price:</strong> ${{ object.selling_price }}</p>
+                            <p><strong>Created:</strong> {{ object.created_at|date:"M d, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if object.inventories.all %}
+                    <div class="mt-3 alert alert-danger">
+                        <strong>Warning:</strong> This product has existing inventory records which will be affected by deletion.
+                        <ul class="mb-0 mt-2">
+                            {% for inventory in object.inventories.all %}
+                            <li>{{ inventory.warehouse.warehouse_name }}: {{ inventory.quantity_on_hand }} units</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i> Yes, Delete Product
+                        </button>
+                        <a href="{% url 'inventory:product-detail' object.pk %}" class="btn btn-outline-secondary ms-2">
+                            Cancel
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}EOQ Parameters List - EOQ IMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>All EOQ Parameters</h5>
+            <a href="{% url 'analytics:eoq_parameters_selection' %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Parameters
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Annual Demand</th>
+                            <th>Order Cost</th>
+                            <th>Holding Cost</th>
+                            <th>EOQ Value</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for param in page_obj %}
+                        <tr>
+                            <td>{{ param.product.product_name }}</td>
+                            <td>{{ param.product.category.name|default:"N/A" }}</td>
+                            <td>{{ param.annual_demand|floatformat:0 }}</td>
+                            <td>${{ param.order_cost|floatformat:2 }}</td>
+                            <td>${{ param.holding_cost|floatformat:2 }}</td>
+                            <td>{{ param.product.eoq|floatformat:2|default:"Not calculated" }}</td>
+                            <td>{{ param.last_calculated|date:"M d, Y"|default:"Never" }}</td>
+                            <td>
+                                <a href="{% url 'analytics:eoq_parameters' param.product.product_id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-3">No EOQ parameters available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white">
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

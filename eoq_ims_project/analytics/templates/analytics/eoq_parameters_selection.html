@@ -1,0 +1,118 @@
+{% extends "dashboard\base.html" %}
+
+{% block title %}EOQ Parameters Selection{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+            <li class="breadcrumb-item active">EOQ Parameters</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0">Economic Order Quantity (EOQ) Parameters</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0">Products with EOQ Parameters</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if products_with_eoq %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Current EOQ</th>
+                                            <th>Last Calculated</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for param in products_with_eoq %}
+                                        <tr>
+                                            <td>{{ param.product.product_name }}</td>
+                                            <td>{{ param.product.eoq|floatformat:2 }}</td>
+                                            <td>{{ param.last_calculated|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'analytics:eoq_parameters' param.product.product_id %}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    Edit
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                No products have EOQ parameters set up yet.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0">Set Up EOQ Parameters</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Select a product to set up or edit EOQ parameters:</p>
+                            
+                            <div class="list-group">
+                                {% for product in products %}
+                                <a href="{% url 'analytics:eoq_parameters' product.product_id %}" 
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ product.product_name }}</h6>
+                                        <small>SKU: {{ product.sku }}</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        {% if product.eoq %}
+                                        Current EOQ: {{ product.eoq|floatformat:2 }}
+                                        {% else %}
+                                        No EOQ set
+                                        {% endif %}
+                                    </small>
+                                </a>
+                                {% empty %}
+                                <div class="alert alert-warning">
+                                    No products available. Please add products first.
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h5>About EOQ Parameters</h5>
+                <div class="alert alert-light">
+                    <p><strong>Economic Order Quantity (EOQ)</strong> is the optimal order quantity that minimizes the total inventory costs.</p>
+                    <p>To calculate EOQ, the following parameters are required:</p>
+                    <ul>
+                        <li><strong>Annual Demand:</strong> The total quantity required over a year</li>
+                        <li><strong>Order Cost:</strong> The fixed cost of placing an order</li>
+                        <li><strong>Holding Cost:</strong> The cost of storing one unit for one year</li>
+                    </ul>
+                    <p>Optional parameters include:</p>
+                    <ul>
+                        <li><strong>Stock Out Cost:</strong> The cost of running out of inventory</li>
+                        <li><strong>Safety Factor:</strong> A multiplier for safety stock calculation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

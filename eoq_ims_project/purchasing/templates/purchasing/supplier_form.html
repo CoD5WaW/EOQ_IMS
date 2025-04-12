@@ -1,0 +1,189 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit Supplier{% else %}Add Supplier{% endif %} | EOQ Inventory Management System
+{% endblock %}
+
+{% block header_title %}
+    {% if form.instance.pk %}Edit Supplier{% else %}Add Supplier{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus{% endif %} me-2"></i>
+                    {% if form.instance.pk %}
+                    Edit Supplier: {{ form.instance.supplier_name }}
+                    {% else %}
+                    Add New Supplier
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="{{ form.supplier_name.id_for_label }}" class="form-label">Supplier Name *</label>
+                            {{ form.supplier_name }}
+                            {% if form.supplier_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.supplier_name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.contact_person.id_for_label }}" class="form-label">Contact Person</label>
+                            {{ form.contact_person }}
+                            {% if form.contact_person.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.contact_person.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">Phone Number</label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.phone.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.email.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.address.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.order_cost.id_for_label }}" class="form-label">Order Cost *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.order_cost }}
+                            </div>
+                            <small class="text-muted">Fixed cost per order</small>
+                            {% if form.order_cost.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.order_cost.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.lead_time_days.id_for_label }}" class="form-label">Lead Time (days)</label>
+                            {{ form.lead_time_days }}
+                            <small class="text-muted">Average delivery time in days</small>
+                            {% if form.lead_time_days.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.lead_time_days.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                {{ form.active }}
+                                <label class="form-check-label" for="{{ form.active.id_for_label }}">Active Supplier</label>
+                            </div>
+                            {% if form.active.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.active.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Supplier
+                        </button>
+                        {% if form.instance.pk %}
+                        <a href="{% url 'purchasing:supplier_detail' form.instance.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        {% else %}
+                        <a href="{% url 'purchasing:supplier_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add Bootstrap form styling to Django form elements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add form-control class to all input fields
+        const formInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="number"], input[type="tel"], textarea, select');
+        formInputs.forEach(input => {
+            input.classList.add('form-control');
+        });
+        
+        // Add form-check-input class to checkboxes
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.classList.add('form-check-input');
+        });
+    });
+</script>
+{% endblock %}

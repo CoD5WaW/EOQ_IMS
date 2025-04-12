@@ -1,0 +1,60 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Delete Category | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Delete Category{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inventory:category-list' %}">Categories</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'inventory:category-detail' category.id %}">{{ category.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Delete</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-6 col-md-8 mx-auto">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">Warning!</h5>
+                        <p>You are about to delete the category "<strong>{{ category.name }}</strong>".</p>
+                        
+                        {% if category.products.count > 0 %}
+                        <hr>
+                        <p class="mb-0">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            This category contains <strong>{{ category.products.count }}</strong> products. 
+                            If you delete this category, these products will no longer be categorized.
+                        </p>
+                        {% endif %}
+                    </div>
+                    
+                    <p>This action cannot be undone. Are you sure you want to proceed?</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'inventory:category-detail' category.id %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>Delete Category
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

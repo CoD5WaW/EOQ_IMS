@@ -1,0 +1,93 @@
+/* Custom styles for EOQ IMS */
+
+/* Dashboard cards */
+.card {
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Table styling */
+.table-container {
+    overflow-x: auto;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* Form styling */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.required-field label:after {
+    content: " *";
+    color: red;
+}
+
+/* Statistics counter */
+.stat-counter {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* Alert quantity indicators */
+.qty-low {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.qty-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.qty-ok {
+    color: #28a745;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.status-draft {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-pending {
+    background-color: #ffc107;
+}
+
+.status-approved {
+    background-color: #0dcaf0;
+}
+
+.status-ordered {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.status-received {
+    background-color: #198754;
+    color: white;
+}
+
+.status-cancelled {
+    background-color: #dc3545;
+    color: white;
+}

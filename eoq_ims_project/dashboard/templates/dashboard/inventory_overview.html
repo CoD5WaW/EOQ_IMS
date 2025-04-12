@@ -1,0 +1,320 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Inventory Overview - EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Inventory Overview{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+        background-color: rgba(0, 0, 0, 0.03);
+        padding: 0.75rem 1.25rem;
+    }
+    .low-stock-alert {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    .category-badge {
+        font-size: 0.85rem;
+        padding: 0.35em 0.65em;
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Inventory by Category -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Inventory by Category</h5>
+                    <a href="{% url 'inventory:category-list' %}" class="btn btn-sm btn-outline-primary">Manage Categories</a>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:300px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Products</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>{{ category.category_name|default:"Uncategorized" }}</td>
+                                        <td>{{ category.product_count }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="text-center">No categories available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Inventory Value by Warehouse -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-building me-2"></i>Inventory Value by Warehouse</h5>
+                    <a href="{% url 'warehouse:warehouse_list' %}" class="btn btn-sm btn-outline-primary">Manage Warehouses</a>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:300px;">
+                        <canvas id="warehouseChart"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Warehouse</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for warehouse in warehouse_values %}
+                                    <tr>
+                                        <td>{{ warehouse.warehouse__warehouse_name }}</td>
+                                        <td>${{ warehouse.total_value|floatformat:2 }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="text-center">No warehouse data available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Low Stock Items -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Items</h5>
+                    <a href="{% url 'inventory:inventory-list' %}" class="btn btn-sm btn-outline-primary">View All Inventory</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>On Hand</th>
+                                    <th>Reorder Point</th>
+                                    <th>Warehouse</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_stock_items %}
+                                <tr class="low-stock-alert">
+                                    <td>{{ item.product.product_name }}</td>
+                                    <td>{{ item.quantity_on_hand }}</td>
+                                    <td>{{ item.product.reorder_point }}</td>
+                                    <td>{{ item.warehouse.warehouse_name }}</td>
+                                    <td>
+                                        <a href="{% url 'purchasing:create_po' %}?product={{ item.product.product_id }}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-shopping-cart"></i> Reorder
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No low stock items</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Inventory Transactions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Recent Transactions</h5>
+                    <a href="{% url 'inventory:transaction-list' %}" class="btn btn-sm btn-outline-primary">View All Transactions</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_date|date:"M d, Y" }}</td>
+                                    <td>{{ transaction.product.product_name }}</td>
+                                    <td>
+                                        {% if transaction.transaction_type == 'receipt' %}
+                                            <span class="badge bg-success">Receipt</span>
+                                        {% elif transaction.transaction_type == 'issue' %}
+                                            <span class="badge bg-warning text-dark">Issue</span>
+                                        {% elif transaction.transaction_type == 'adjustment_positive' %}
+                                            <span class="badge bg-info">Pos Adj</span>
+                                        {% elif transaction.transaction_type == 'adjustment_negative' %}
+                                            <span class="badge bg-danger">Neg Adj</span>
+                                        {% elif transaction.transaction_type == 'transfer_in' %}
+                                            <span class="badge bg-primary">Trans In</span>
+                                        {% elif transaction.transaction_type == 'transfer_out' %}
+                                            <span class="badge bg-secondary">Trans Out</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction.quantity }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No recent transactions</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'pie',
+        data: {
+            labels: [
+                {% for category in categories %}
+                '{{ category.category_name|default:"Uncategorized" }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Products by Category',
+                data: [
+                    {% for category in categories %}
+                    {{ category.product_count }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 99, 132, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)',
+                    'rgba(153, 102, 255, 0.6)',
+                    'rgba(255, 159, 64, 0.6)',
+                    'rgba(199, 199, 199, 0.6)',
+                    'rgba(83, 102, 255, 0.6)',
+                    'rgba(40, 159, 64, 0.6)',
+                    'rgba(210, 199, 199, 0.6)',
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(199, 199, 199, 1)',
+                    'rgba(83, 102, 255, 1)',
+                    'rgba(40, 159, 64, 1)',
+                    'rgba(210, 199, 199, 1)',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15
+                    }
+                }
+            }
+        }
+    });
+
+    // Warehouse Chart
+    const warehouseCtx = document.getElementById('warehouseChart').getContext('2d');
+    const warehouseChart = new Chart(warehouseCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for warehouse in warehouse_values %}
+                '{{ warehouse.warehouse__warehouse_name }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Inventory Value ($)',
+                data: [
+                    {% for warehouse in warehouse_values %}
+                    {{ warehouse.total_value }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

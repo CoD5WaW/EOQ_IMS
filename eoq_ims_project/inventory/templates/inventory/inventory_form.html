@@ -1,0 +1,135 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}{% if form.instance.pk %}Update{% else %}Create{% endif %} Inventory | EOQ IMS{% endblock %}
+
+{% block header_title %}{% if form.instance.pk %}Update{% else %}Create{% endif %} Inventory{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">{% if form.instance.pk %}Update{% else %}Create{% endif %} Inventory Record</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.product.id_for_label }}" class="form-label">Product</label>
+                                {{ form.product }}
+                                {% if form.product.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.product.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.warehouse.id_for_label }}" class="form-label">Warehouse</label>
+                                {{ form.warehouse }}
+                                {% if form.warehouse.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.warehouse.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.quantity_on_hand.id_for_label }}" class="form-label">Quantity on Hand</label>
+                                {{ form.quantity_on_hand }}
+                                {% if form.quantity_on_hand.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.quantity_on_hand.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.safety_stock.id_for_label }}" class="form-label">Safety Stock</label>
+                                {{ form.safety_stock }}
+                                {% if form.safety_stock.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.safety_stock.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'inventory:inventory-list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Inventory
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Help</h5>
+                </div>
+                <div class="card-body">
+                    <h6>About Inventory Records</h6>
+                    <p>An inventory record tracks the quantity of a product at a specific warehouse location.</p>
+                    
+                    <h6>Fields Explanation:</h6>
+                    <ul>
+                        <li><strong>Product:</strong> The item being tracked</li>
+                        <li><strong>Warehouse:</strong> The location where the product is stored</li>
+                        <li><strong>Quantity on Hand:</strong> Current available stock</li>
+                        <li><strong>Safety Stock:</strong> Minimum quantity to maintain to prevent stockouts</li>
+                    </ul>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Note:</strong> Create transactions to adjust inventory quantities after initial setup.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Style Django form elements with Bootstrap classes
+        const formSelects = document.querySelectorAll('select');
+        formSelects.forEach(select => {
+            select.classList.add('form-select');
+        });
+        
+        const formInputs = document.querySelectorAll('input[type="text"], input[type="number"]');
+        formInputs.forEach(input => {
+            input.classList.add('form-control');
+        });
+    });
+</script>
+{% endblock %}

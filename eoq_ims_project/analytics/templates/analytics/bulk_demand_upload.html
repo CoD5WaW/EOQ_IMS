@@ -1,0 +1,87 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}Bulk Upload Demand History - EOQ IMS{% endblock %}
+
+{% block header_title %}Bulk Upload Demand History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-file-upload me-2"></i>Bulk Upload Demand History
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">
+                    Upload a CSV file to add multiple demand history records at once. The file must have the following columns:
+                </p>
+                
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">CSV File Format</h6>
+                    <p class="mb-0">
+                        The file should have the following columns in this order:
+                    </p>
+                    <ul class="mb-0">
+                        <li><strong>product_id</strong>: The numeric ID of the product</li>
+                        <li><strong>period_date</strong>: Date in YYYY-MM-DD format (e.g., 2023-04-01)</li>
+                        <li><strong>quantity</strong>: The demand quantity (a positive integer)</li>
+                        <li><strong>demand_type</strong>: Either 'actual' or 'forecast'</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-secondary mt-3">
+                    <h6 class="alert-heading">Example</h6>
+                    <pre class="mb-0">product_id,period_date,quantity,demand_type
+1,2023-01-15,250,actual
+2,2023-01-15,175,actual
+1,2023-05-20,300,forecast</pre>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data" class="mt-4">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.file.id_for_label }}" class="form-label">{{ form.file.label }}</label>
+                        {{ form.file }}
+                        <div class="form-text">{{ form.file.help_text }}</div>
+                        {% if form.file.errors %}
+                            <div class="invalid-feedback d-block">{{ form.file.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'analytics:demand_history_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i> Back to List
+                        </a>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-1"></i> Upload and Process
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="mt-4">
+                    <h6 class="font-weight-bold">Notes:</h6>
+                    <ul>
+                        <li>The first row of the CSV file will be treated as a header row and will be skipped.</li>
+                        <li>Make sure the product IDs exist in the system before uploading.</li>
+                        <li>Any rows with errors will be skipped, and the valid rows will be processed.</li>
+                        <li>Large files may take some time to process.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Apply Bootstrap classes to the file input
+        $('#{{ form.file.id_for_label }}').addClass('form-control');
+    });
+</script>
+{% endblock %}

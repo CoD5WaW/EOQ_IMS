@@ -1,0 +1,398 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}{{ product.product_name }} | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Product Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-0">{{ product.product_name }}</h2>
+        <p class="text-muted">
+            ID: {{ product.product_id }} | 
+            {% if product.category %}
+            Category: {{ product.category.name }}
+            {% else %}
+            Category: Not Categorized
+            {% endif %}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'inventory:product-update' product.product_id %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-2"></i>Edit
+            </a>
+            <a href="{% url 'inventory:product-delete' product.product_id %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-2"></i>Delete
+            </a>
+            <a href="{% url 'inventory:product-list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-2"></i>All Products
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <!-- Product Details Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Product Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Status:</strong> 
+                        {% if product.active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Unit Cost:</strong> 
+                        <span>${{ product.unit_cost }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Selling Price:</strong> 
+                        <span>${{ product.selling_price }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Reorder Point:</strong> 
+                        <span>{{ product.reorder_point }} units</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Lead Time:</strong> 
+                        <span>{% if product.lead_time_days %}{{ product.lead_time_days }} days{% else %}Not specified{% endif %}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Holding Cost:</strong> 
+                        <span>{% if product.holding_cost_percentage %}{{ product.holding_cost_percentage }}%{% else %}Not specified{% endif %}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>EOQ:</strong> 
+                        <span>{% if product.eoq %}{{ product.eoq }} units{% else %}Not calculated{% endif %}</span>
+                        <a href="{% url 'inventory:calculate-eoq' product.product_id %}" class="btn btn-sm btn-outline-primary ms-2" title="Calculate EOQ">
+                            <i class="fas fa-calculator"></i>
+                        </a>
+                    </div>
+                    <div class="col-md-8">
+                        <strong>Created At:</strong> {{ product.created_at|date:"F d, Y H:i" }}
+                        <br>
+                        <strong>Last Updated:</strong> {{ product.updated_at|date:"F d, Y H:i" }}
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <p class="mt-2">{% if product.description %}{{ product.description }}{% else %}No description provided{% endif %}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demand Chart Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Demand History
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="demand-chart-container">
+                    <canvas id="demandChart"></canvas>
+                </div>
+                <div id="demand-chart-loading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading demand data...</p>
+                </div>
+                <div id="demand-chart-error" class="alert alert-warning my-3 d-none">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="error-message">No demand data available.</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Transactions Card -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Recent Transactions
+                    </h5>
+                    <a href="{% url 'inventory:transaction-create' %}?product={{ product.product_id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>New Transaction
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Warehouse</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.transaction_date|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if transaction.transaction_type == 'receipt' %}
+                                    <span class="badge bg-success">Receipt</span>
+                                    {% elif transaction.transaction_type == 'issue' %}
+                                    <span class="badge bg-danger">Issue</span>
+                                    {% elif transaction.transaction_type == 'adjustment_positive' %}
+                                    <span class="badge bg-info">Pos. Adjustment</span>
+                                    {% elif transaction.transaction_type == 'adjustment_negative' %}
+                                    <span class="badge bg-warning">Neg. Adjustment</span>
+                                    {% elif transaction.transaction_type == 'transfer_in' %}
+                                    <span class="badge bg-primary">Transfer In</span>
+                                    {% elif transaction.transaction_type == 'transfer_out' %}
+                                    <span class="badge bg-secondary">Transfer Out</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.quantity }}</td>
+                                <td>{{ transaction.warehouse.warehouse_name }}</td>
+                                <td>
+                                    {% if transaction.reference_document %}
+                                    {{ transaction.reference_document }}
+                                    {% if transaction.reference_id %}
+                                    #{{ transaction.reference_id }}
+                                    {% endif %}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'inventory:transaction-list' %}?product={{ product.product_id }}" class="btn btn-sm btn-outline-secondary">
+                        View All Transactions
+                    </a>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No transactions found for this product.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Current Inventory Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-warehouse me-2"></i>Inventory Levels
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if inventories %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Warehouse</th>
+                                <th>Quantity</th>
+                                <th>Safety Stock</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inventory in inventories %}
+                            <tr>
+                                <td>{{ inventory.warehouse.warehouse_name }}</td>
+                                <td>{{ inventory.quantity_on_hand }}</td>
+                                <td>{{ inventory.safety_stock }}</td>
+                                <td>
+                                    {% if inventory.quantity_on_hand <= product.reorder_point %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                    {% else %}
+                                    <span class="badge bg-success">In Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>No inventory records found for this product.
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'inventory:inventory-create' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus me-2"></i>Add Inventory Record
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- EOQ Visualization Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calculator me-2"></i>EOQ Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if product.eoq %}
+                <div class="text-center mb-3">
+                    <div class="py-2">
+                        <span class="display-6">{{ product.eoq }}</span>
+                        <span class="text-muted">units</span>
+                    </div>
+                    <p class="text-muted">Economic Order Quantity</p>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="p-3 border rounded bg-light mb-2">
+                            <span class="fs-5">{{ product.reorder_point }}</span>
+                        </div>
+                        <p class="text-muted small">Reorder Point</p>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 border rounded bg-light mb-2">
+                            <span class="fs-5">{% if product.lead_time_days %}{{ product.lead_time_days }}{% else %}N/A{% endif %}</span>
+                        </div>
+                        <p class="text-muted small">Lead Time (days)</p>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-center">
+                    <a href="{% url 'analytics:eoq_dashboard' %}?product={{ product.product_id }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sliders-h me-2"></i>Adjust EOQ Parameters
+                    </a>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>EOQ not calculated for this product.
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{% url 'inventory:calculate-eoq' product.product_id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-calculator me-2"></i>Calculate EOQ
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch demand chart data
+        const chartContainer = document.getElementById('demand-chart-container');
+        const chartLoading = document.getElementById('demand-chart-loading');
+        const chartError = document.getElementById('demand-chart-error');
+        const errorMessage = document.getElementById('error-message');
+        
+        // Initially hide the chart container
+        chartContainer.style.display = 'none';
+        
+        fetch('{% url 'inventory:product-demand-chart' product.product_id %}')
+            .then(response => response.json())
+            .then(result => {
+                chartLoading.style.display = 'none';
+                
+                if (result.success && result.data.labels.length > 0) {
+                    // Show the chart container
+                    chartContainer.style.display = 'block';
+                    
+                    // Create chart
+                    const ctx = document.getElementById('demandChart').getContext('2d');
+                    const datasets = [
+                        {
+                            label: 'Actual Demand',
+                            data: result.data.actual,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2
+                        }
+                    ];
+                    
+                    // Add forecast data if available
+                    if (result.data.forecast) {
+                        datasets.push({
+                            label: 'Forecast Demand',
+                            data: result.data.forecast,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        });
+                    }
+                    
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: result.data.labels,
+                            datasets: datasets
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: '12-Month Demand History'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Quantity'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Month'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Show error message
+                    chartError.classList.remove('d-none');
+                    if (!result.success) {
+                        errorMessage.textContent = result.error || 'Failed to load demand data.';
+                    } else {
+                        errorMessage.textContent = 'No demand history available for this product.';
+                    }
+                }
+            })
+            .catch(error => {
+                chartLoading.style.display = 'none';
+                chartError.classList.remove('d-none');
+                errorMessage.textContent = 'Error loading demand data: ' + error.message;
+            });
+    });
+</script>
+{% endblock %}

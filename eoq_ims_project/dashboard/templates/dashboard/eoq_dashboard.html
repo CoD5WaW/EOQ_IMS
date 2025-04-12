@@ -1,0 +1,249 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}EOQ Dashboard - EOQ IMS{% endblock %}
+
+{% block header_title %}EOQ Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-data {
+        font-size: 1.1rem;
+    }
+    .card-value {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+    .high-cost {
+        color: #dc3545;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .product-link {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    .product-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>EOQ Analysis Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="card-data">Products with EOQ</div>
+                        <div class="card-value">{{ products_with_eoq.count }}</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card-data">Products Needing Calculation</div>
+                        <div class="card-value">{{ products_needing_eoq.count }}</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card-data">Products Without Parameters</div>
+                        <div class="card-value">{{ missing_params_count }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'analytics:eoq_parameters_selection' %}" class="btn btn-primary">
+                    <i class="fas fa-sliders-h me-2"></i>Manage EOQ Parameters
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Products with EOQ Values</h5>
+                <span class="badge bg-success">{{ products_with_eoq.count }} Products</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>EOQ Value</th>
+                                <th>Annual Demand</th>
+                                <th>Holding Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products_with_eoq %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' product.pk %}" class="product-link">
+                                        {{ product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ product.category.name|default:"N/A" }}</td>
+                                <td>{{ product.eoq|floatformat:2 }}</td>
+                                <td>{{ product.eoq_parameters.annual_demand|floatformat:0 }}</td>
+                                <td>${{ product.eoq_parameters.holding_cost|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">No products with EOQ values available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'analytics:eoq_calculation' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-calculator me-2"></i>Recalculate EOQ Values
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Products Needing EOQ Calculation</h5>
+                <span class="badge bg-warning text-dark">{{ products_needing_eoq.count }} Products</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Annual Demand</th>
+                                <th>Order Cost</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products_needing_eoq %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' product.pk %}" class="product-link">
+                                        {{ product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ product.category.name|default:"N/A" }}</td>
+                                <td>{{ product.eoq_parameters.annual_demand|floatformat:0 }}</td>
+                                <td>${{ product.eoq_parameters.order_cost|floatformat:2 }}</td>
+                                <td>{{ product.eoq_parameters.last_calculated|date:"M d, Y"|default:"Never" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">No products needing EOQ calculation.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'analytics:eoq_calculation' %}" class="btn btn-warning">
+                    <i class="fas fa-sync me-2"></i>Calculate Missing EOQ Values
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Highest Holding Cost Products</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Holding Cost</th>
+                                <th>EOQ Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eoq_param in high_holding_cost %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' eoq_param.product.pk %}" class="product-link">
+                                        {{ eoq_param.product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ eoq_param.product.category.name|default:"N/A" }}</td>
+                                <td class="high-cost">${{ eoq_param.holding_cost|floatformat:2 }}</td>
+                                <td>{{ eoq_param.product.eoq|floatformat:2|default:"Not calculated" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">No holding cost data available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'analytics:eoq_parameters_list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list me-2"></i>View All Parameters
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent EOQ Parameter Updates</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Annual Demand</th>
+                                <th>Order Cost</th>
+                                <th>Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eoq_param in recent_eoq_updates %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' eoq_param.product.pk %}" class="product-link">
+                                        {{ eoq_param.product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ eoq_param.annual_demand|floatformat:0 }}</td>
+                                <td>${{ eoq_param.order_cost|floatformat:2 }}</td>
+                                <td>{{ eoq_param.last_calculated|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">No recent EOQ parameter updates.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

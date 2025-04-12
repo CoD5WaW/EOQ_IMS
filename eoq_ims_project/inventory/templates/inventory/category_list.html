@@ -1,0 +1,168 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Categories | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Categories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-card {
+        transition: transform 0.2s;
+    }
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0 text-gray-800">Product Categories</h1>
+            <p class="text-muted">Manage your product categories</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'inventory:category-create' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Add New Category
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Categories Grid -->
+    <div class="row">
+        {% if categories %}
+            {% for category in categories %}
+                <div class="col-xl-3 col-md-4 col-sm-6 mb-4">
+                    <div class="card h-100 category-card">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">
+                                <i class="fas fa-tag me-2"></i>{{ category.name }}
+                            </h5>
+                            <p class="card-text text-muted">
+                                {% if category.description %}
+                                    {{ category.description|truncatechars:100 }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">No description provided</span>
+                                {% endif %}
+                            </p>
+                            <div class="d-flex justify-content-between mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-box me-1"></i>
+                                    {{ category.products.count }} products
+                                </small>
+                                <small class="text-muted">
+                                    Created: {{ category.created_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent d-flex justify-content-between">
+                            <a href="{% url 'inventory:category-detail' category.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                            <div>
+                                <a href="{% url 'inventory:category-update' category.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </a>
+                                <a href="{% url 'inventory:category-delete' category.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash me-1"></i>Delete
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-folder-open text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="card-title">No Categories Found</h5>
+                        <p class="card-text text-muted">
+                            You haven't created any categories yet. Categories help organize your products.
+                        </p>
+                        <a href="{% url 'inventory:category-create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Create Your First Category
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;&laquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;&raquo;</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}Products | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Product Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-3">Product List</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'inventory:product-create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Product
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row mb-3 g-3">
+            <div class="col-md-4">
+                <label for="category" class="form-label">Filter by Category</label>
+                <select name="category" id="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"i" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="active" name="active" value="true"
+                        {% if request.GET.active == 'true' %}checked{% endif %}>
+                    <label class="form-check-label" for="active">Show Active Products Only</label>
+                </div>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-filter me-2"></i>Apply Filters
+                </button>
+                <a href="{% url 'inventory:product-list' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-undo me-2"></i>Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if products %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Unit Cost</th>
+                        <th>Selling Price</th>
+                        <th>Reorder Point</th>
+                        <th>EOQ</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.product_id }}</td>
+                        <td>
+                            <a href="{% url 'inventory:product-detail' product.product_id %}">
+                                {{ product.product_name }}
+                            </a>
+                        </td>
+                        <td>{% if product.category %}{{ product.category.name }}{% else %}Not Categorized{% endif %}</td>
+                        <td>${{ product.unit_cost }}</td>
+                        <td>${{ product.selling_price }}</td>
+                        <td>{{ product.reorder_point }}</td>
+                        <td>{% if product.eoq %}{{ product.eoq }}{% else %}-{% endif %}</td>
+                        <td>
+                            {% if product.active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'inventory:product-detail' product.product_id %}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'inventory:product-update' product.product_id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'inventory:product-delete' product.product_id %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}" aria-label="First">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}">
+                    {{ num }}
+                </a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.active %}&active={{ request.GET.active }}{% endif %}" aria-label="Last">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info shadow-sm">
+    <i class="fas fa-info-circle me-2"></i>No products found with the current filters. 
+    {% if request.GET.category or request.GET.active %}
+    <a href="{% url 'inventory:product-list' %}">Clear filters</a> or 
+    {% endif %}
+    <a href="{% url 'inventory:product-create' %}">create a new product</a>.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit the form when the category or active filter changes
+        document.getElementById('category').addEventListener('change', function() {
+            this.form.submit();
+        });
+        
+        document.getElementById('active').addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

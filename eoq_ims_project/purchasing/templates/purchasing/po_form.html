@@ -1,0 +1,230 @@
+{% extends 'dashboard\base.html' %}
+{% load widget_tweaks %}
+
+{% load static %}
+
+{% block title %}
+    {% if object %}Edit Purchase Order #{{ object.po_id }}{% else %}Create Purchase Order{% endif %} | EOQ Inventory Management System
+{% endblock %}
+
+{% block header_title %}
+    {% if object %}Edit Purchase Order #{{ object.po_id }}{% else %}Create Purchase Order{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .item-form {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+        }
+        .delete-row {
+            color: #dc3545;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{% if object %}{% url 'purchasing:po_detail' po_id=object.po_id %}{% else %}{% url 'purchasing:po_list' %}{% endif %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">{% if object %}Edit Purchase Order{% else %}Create Purchase Order{% endif %}</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" id="po-form">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier</label>
+                    {{ form.supplier.errors }}
+                    {{ form.supplier|add_class:"form-select" }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.po_status.id_for_label }}" class="form-label">Status</label>
+                    {{ form.po_status.errors }}
+                    {{ form.po_status|add_class:"form-select" }}
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.order_date.id_for_label }}" class="form-label">Order Date</label>
+                    {{ form.order_date.errors }}
+                    {{ form.order_date|add_class:"form-control" }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.expected_delivery.id_for_label }}" class="form-label">Expected Delivery</label>
+                    {{ form.expected_delivery.errors }}
+                    {{ form.expected_delivery|add_class:"form-control" }}
+                    <small class="form-text text-muted">Optional</small>
+                </div>
+            </div>
+            
+            <h5 class="mt-4 mb-3">Purchase Order Items</h5>
+            
+            {{ items.management_form }}
+            {{ items.non_form_errors }}
+            
+            <div id="item-forms">
+                {% for form in items.forms %}
+                    <div class="item-form">
+                        {% if form.instance.pk %}{{ form.DELETE }}{% endif %}
+                        <div class="row">
+                            <div class="col-md-5 mb-3">
+                                <label for="{{ form.product.id_for_label }}" class="form-label">Product</label>
+                                {{ form.product.errors }}
+                                {{ form.product|add_class:"form-select" }}
+                                {{ form.id }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity</label>
+                                {{ form.quantity.errors }}
+                                {{ form.quantity|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="{{ form.unit_price.id_for_label }}" class="form-label">Unit Price</label>
+                                {{ form.unit_price.errors }}
+                                {{ form.unit_price|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end mb-3">
+                                {% if forloop.counter > 1 %}
+                                    <button type="button" class="btn btn-outline-danger remove-form">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                <button type="button" id="add-form" class="btn btn-outline-secondary">
+                    <i class="fas fa-plus me-1"></i> Add Item
+                </button>
+            </div>
+            
+            <div class="d-flex justify-content-end mt-4">
+                <button type="button" class="btn btn-secondary me-2" onclick="window.history.back();">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Purchase Order</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const formContainer = document.getElementById('item-forms');
+        const addButton = document.getElementById('add-form');
+        const totalForms = document.getElementById('id_items-TOTAL_FORMS');
+        
+        // Keep track of the template form
+        const emptyForm = document.querySelector('.item-form').cloneNode(true);
+        const formRegex = /items-__prefix__/g;
+        
+        // Function to update form indices
+        function updateElementIndex(el, prefix, ndx) {
+            const idRegex = new RegExp(prefix + '-(\\d+|__prefix__)-');
+            const replacement = prefix + '-' + ndx + '-';
+            
+            if (el.id) el.id = el.id.replace(idRegex, replacement);
+            if (el.name) el.name = el.name.replace(idRegex, replacement);
+            
+            // Update for labels too
+            const labels = el.querySelectorAll('label');
+            labels.forEach(function(label) {
+                if (label.getAttribute('for')) {
+                    label.setAttribute('for', label.getAttribute('for').replace(idRegex, replacement));
+                }
+            });
+        }
+        
+        // Function to add a new form
+        function addForm(e) {
+            e.preventDefault();
+            
+            const formCount = document.querySelectorAll('.item-form').length;
+            const newForm = emptyForm.cloneNode(true);
+            
+            // Set form number for the new form
+            newForm.innerHTML = newForm.innerHTML.replace(formRegex, 'items-' + formCount);
+            
+            // Update IDs and names for all children of the new form
+            newForm.querySelectorAll('input, select').forEach(function(element) {
+                updateElementIndex(element, 'items', formCount);
+                
+                // Clear values in the new form
+                if (element.type !== 'hidden' && element.type !== 'checkbox') {
+                    element.value = '';
+                }
+            });
+            
+            // Add the new form
+            formContainer.appendChild(newForm);
+            
+            // Update the total number of forms
+            totalForms.value = parseInt(totalForms.value) + 1;
+            
+            // Add event listener to remove button
+            addRemoveButtonListeners();
+        }
+        
+        // Function to handle form removal
+        function removeForm(e) {
+            e.preventDefault();
+            
+            // Get the parent form
+            const form = e.target.closest('.item-form');
+            
+            // Check if there's a DELETE checkbox (for existing items)
+            const deleteCheckbox = form.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (deleteCheckbox) {
+                // Mark for deletion
+                deleteCheckbox.checked = true;
+                // Hide the form
+                form.style.display = 'none';
+            } else {
+                // Just remove the form for new items
+                form.remove();
+                
+                // Update indices for all remaining forms
+                const forms = document.querySelectorAll('.item-form');
+                forms.forEach(function(form, index) {
+                    form.querySelectorAll('input, select').forEach(function(element) {
+                        updateElementIndex(element, 'items', index);
+                    });
+                });
+                
+                // Update the total number of forms
+                totalForms.value = forms.length;
+            }
+        }
+        
+        // Add event listeners to all remove buttons
+        function addRemoveButtonListeners() {
+            document.querySelectorAll('.remove-form').forEach(function(button) {
+                // Remove existing listeners to prevent duplicates
+                button.removeEventListener('click', removeForm);
+                // Add fresh listener
+                button.addEventListener('click', removeForm);
+            });
+        }
+        
+        // Initial setup
+        addButton.addEventListener('click', addForm);
+        addRemoveButtonListeners();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Category Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-item {
+        transition: all 0.2s;
+    }
+    .product-item:hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'inventory:category-list' %}">Categories</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Category Info Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h1 class="h3 mb-2">{{ category.name }}</h1>
+                            <p class="text-muted mb-4">
+                                {% if category.description %}
+                                    {{ category.description }}
+                                {% else %}
+                                    <span class="fst-italic">No description provided</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <div class="mb-3">
+                                <span class="badge text-bg-info fs-6">{{ products|length }} Products</span>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{% url 'inventory:category-update' category.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit me-2"></i>Edit
+                                </a>
+                                <a href="{% url 'inventory:category-delete' category.id %}" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <p class="mb-0"><strong>Created:</strong> {{ category.created_at|date:"F d, Y, H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-0 text-md-end"><strong>Last updated:</strong> {{ category.updated_at|date:"F d, Y, H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products in Category Section -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0">Products in this Category</h5>
+                        </div>
+                        <div class="col text-end">
+                            <a href="{% url 'inventory:product-create' %}?category={{ category.id }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i>Add Product
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if products %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Product Name</th>
+                                    <th>Unit Cost</th>
+                                    <th>Selling Price</th>
+                                    <th>Reorder Point</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                <tr class="product-item">
+                                    <td>{{ product.product_id }}</td>
+                                    <td>
+                                        <a href="{% url 'inventory:product-detail' product.product_id %}" class="text-decoration-none">
+                                            {{ product.product_name }}
+                                        </a>
+                                    </td>
+                                    <td>${{ product.unit_cost }}</td>
+                                    <td>${{ product.selling_price }}</td>
+                                    <td>{{ product.reorder_point }}</td>
+                                    <td>
+                                        {% if product.active %}
+                                            <span class="badge text-bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge text-bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'inventory:product-detail' product.product_id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'inventory:product-update' product.product_id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-box-open text-muted mb-3" style="font-size: 3rem;"></i>
+                        <h5>No Products in this Category</h5>
+                        <p class="text-muted">
+                            This category doesn't have any products yet.
+                        </p>
+                        <a href="{% url 'inventory:product-create' %}?category={{ category.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Add First Product
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

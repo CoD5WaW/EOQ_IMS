@@ -1,0 +1,116 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}User Profile - EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-circle me-2"></i> User Profile
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        <div class="bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center" style="width: 120px; height: 120px">
+                            <i class="fas fa-user-circle text-secondary" style="font-size: 5rem;"></i>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h4>{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted">
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger me-2">Superuser</span>
+                            {% endif %}
+                            {% if user.is_staff %}
+                                <span class="badge bg-primary me-2">Staff</span>
+                            {% endif %}
+                            <span class="badge bg-secondary">Member since {{ user.date_joined|date:"F j, Y" }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2">Account Information</h5>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th width="120">Username:</th>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ user.email|default:"Not provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>First Name:</th>
+                                    <td>{{ user.first_name|default:"Not provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Name:</th>
+                                    <td>{{ user.last_name|default:"Not provided" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Login:</th>
+                                    <td>{{ user.last_login|date:"F j, Y, g:i a" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="border-bottom pb-2">Permissions</h5>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th width="150">Active:</th>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                        {% else %}
+                                            <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Staff Status:</th>
+                                    <td>
+                                        {% if user.is_staff %}
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                        {% else %}
+                                            <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Superuser Status:</th>
+                                    <td>
+                                        {% if user.is_superuser %}
+                                            <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                        {% else %}
+                                            <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="#" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-key me-1"></i> Change Password
+                    </a>
+                    <a href="#" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

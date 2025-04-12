@@ -1,0 +1,205 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Edit Product: {{ object.product_name }}{% else %}Create New Product{% endif %} | EOQ IMS{% endblock %}
+
+{% block header_title %}{% if object %}Edit Product: {{ object.product_name }}{% else %}Create New Product{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+    }
+    
+    .required-field label:after {
+        content: " *";
+        color: red;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="mb-4">
+            <a href="{% if object %}{% url 'inventory:product-detail' object.pk %}{% else %}{% url 'inventory:product-list' %}{% endif %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back
+            </a>
+        </div>
+        
+        <div class="form-container">
+            <h4 class="mb-4">{% if object %}Edit Product Information{% else %}Add New Product{% endif %}</h4>
+            
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <!-- Product Name -->
+                    <div class="col-md-6 mb-3 required-field">
+                        <label for="{{ form.product_name.id_for_label }}" class="form-label">Product Name</label>
+                        {{ form.product_name.errors }}
+                        <input type="text" name="{{ form.product_name.name }}" id="{{ form.product_name.id_for_label }}" 
+                               class="form-control {% if form.product_name.errors %}is-invalid{% endif %}" 
+                               value="{{ form.product_name.value|default:'' }}" required>
+                    </div>
+                    
+                    <!-- Category -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
+                        {{ form.category.errors }}
+                        <select name="{{ form.category.name }}" id="{{ form.category.id_for_label }}" 
+                                class="form-select {% if form.category.errors %}is-invalid{% endif %}">
+                            <option value="">-- Select Category --</option>
+                            {% for choice in form.category.field.queryset %}
+                                <option value="{{ choice.pk }}" {% if form.category.value|stringformat:'s' == choice.pk|stringformat:'s' %}selected{% endif %}>
+                                    {{ choice }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                    {{ form.description.errors }}
+                    <textarea name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" 
+                              class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                              rows="4">{{ form.description.value|default:'' }}</textarea>
+                </div>
+                
+                <div class="row">
+                    <!-- Unit Cost -->
+                    <div class="col-md-6 mb-3 required-field">
+                        <label for="{{ form.unit_cost.id_for_label }}" class="form-label">Unit Cost</label>
+                        {{ form.unit_cost.errors }}
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="{{ form.unit_cost.name }}" id="{{ form.unit_cost.id_for_label }}" 
+                                   class="form-control {% if form.unit_cost.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.unit_cost.value|default:'' }}" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Selling Price -->
+                    <div class="col-md-6 mb-3 required-field">
+                        <label for="{{ form.selling_price.id_for_label }}" class="form-label">Selling Price</label>
+                        {{ form.selling_price.errors }}
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="{{ form.selling_price.name }}" id="{{ form.selling_price.id_for_label }}" 
+                                   class="form-control {% if form.selling_price.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.selling_price.value|default:'' }}" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Reorder Point -->
+                    <div class="col-md-6 mb-3 required-field">
+                        <label for="{{ form.reorder_point.id_for_label }}" class="form-label">Reorder Point</label>
+                        {{ form.reorder_point.errors }}
+                        <input type="number" name="{{ form.reorder_point.name }}" id="{{ form.reorder_point.id_for_label }}" 
+                               class="form-control {% if form.reorder_point.errors %}is-invalid{% endif %}" 
+                               value="{{ form.reorder_point.value|default:'' }}" min="0" required>
+                        <small class="form-text text-muted">Minimum inventory level before reordering</small>
+                    </div>
+                    
+                    <!-- EOQ -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.eoq.id_for_label }}" class="form-label">Economic Order Quantity</label>
+                        {{ form.eoq.errors }}
+                        <input type="number" name="{{ form.eoq.name }}" id="{{ form.eoq.id_for_label }}" 
+                               class="form-control {% if form.eoq.errors %}is-invalid{% endif %}" 
+                               value="{{ form.eoq.value|default:'' }}" step="0.01" min="0">
+                        <small class="form-text text-muted">Optimal order quantity (can be calculated later)</small>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Holding Cost Percentage -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.holding_cost_percentage.id_for_label }}" class="form-label">Holding Cost (%)</label>
+                        {{ form.holding_cost_percentage.errors }}
+                        <div class="input-group">
+                            <input type="number" name="{{ form.holding_cost_percentage.name }}" id="{{ form.holding_cost_percentage.id_for_label }}" 
+                                   class="form-control {% if form.holding_cost_percentage.errors %}is-invalid{% endif %}" 
+                                   value="{{ form.holding_cost_percentage.value|default:'' }}" step="0.01" min="0">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="form-text text-muted">Annual holding cost as percentage of item value</small>
+                    </div>
+                    
+                    <!-- Lead Time Days -->
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.lead_time_days.id_for_label }}" class="form-label">Lead Time (days)</label>
+                        {{ form.lead_time_days.errors }}
+                        <input type="number" name="{{ form.lead_time_days.name }}" id="{{ form.lead_time_days.id_for_label }}" 
+                               class="form-control {% if form.lead_time_days.errors %}is-invalid{% endif %}" 
+                               value="{{ form.lead_time_days.value|default:'' }}" min="0">
+                        <small class="form-text text-muted">Average time from ordering to receiving</small>
+                    </div>
+                </div>
+                
+                <!-- Active Status -->
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="{{ form.active.name }}" id="{{ form.active.id_for_label }}" 
+                           class="form-check-input {% if form.active.errors %}is-invalid{% endif %}" 
+                           {% if form.active.value %}checked{% endif %}>
+                    <label for="{{ form.active.id_for_label }}" class="form-check-label">Active</label>
+                    {{ form.active.errors }}
+                    <small class="form-text text-muted d-block">Inactive products will not appear in most lists and reports</small>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Product
+                    </button>
+                    <a href="{% if object %}{% url 'inventory:product-detail' object.pk %}{% else %}{% url 'inventory:product-list' %}{% endif %}" 
+                       class="btn btn-outline-secondary ms-2">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calculate profit margin as selling price changes
+        const unitCostInput = document.getElementById('{{ form.unit_cost.id_for_label }}');
+        const sellingPriceInput = document.getElementById('{{ form.selling_price.id_for_label }}');
+        
+        function updateMargin() {
+            const unitCost = parseFloat(unitCostInput.value) || 0;
+            const sellingPrice = parseFloat(sellingPriceInput.value) || 0;
+            
+            if (unitCost > 0 && sellingPrice > 0) {
+                const margin = ((sellingPrice - unitCost) / sellingPrice) * 100;
+                // If we wanted to display this somewhere:
+                // document.getElementById('profit-margin').textContent = margin.toFixed(2) + '%';
+            }
+        }
+        
+        unitCostInput.addEventListener('input', updateMargin);
+        sellingPriceInput.addEventListener('input', updateMargin);
+        
+        // Initial calculation
+        updateMargin();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,336 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Inventory Analysis - EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Inventory Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-dashboard {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .card-dashboard:hover {
+        transform: translateY(-5px);
+    }
+    
+    .analysis-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .metric-card {
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .warehouse-item {
+        padding: 12px 15px;
+        border-left: 4px solid #0d6efd;
+        margin-bottom: 10px;
+        background-color: #f8f9fa;
+        border-radius: 0 4px 4px 0;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .alert-reorder {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        margin-bottom: 10px;
+        padding: 15px;
+        border-radius: 0 4px 4px 0;
+    }
+    
+    .alert-critical {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .progress {
+        height: 10px;
+        margin-top: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="analysis-header d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-search-dollar me-2"></i>Inventory Analysis</h2>
+            <p class="text-muted mb-0">Comprehensive analysis of inventory metrics and reorder notifications</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary me-2" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print Report
+            </button>
+            <a href="{% url 'dashboard:eoq' %}" class="btn btn-primary">
+                <i class="fas fa-calculator me-2"></i>EOQ Analysis
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Warehouse Overview Section -->
+        <div class="col-lg-6">
+            <div class="card card-dashboard">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-warehouse me-2"></i>Warehouse Inventory Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% if warehouses %}
+                        <div class="d-flex justify-content-between mb-3">
+                            <h6>Warehouse</h6>
+                            <h6>Total Items</h6>
+                        </div>
+                        {% for warehouse in warehouses %}
+                            <div class="warehouse-item">
+                                <span><i class="fas fa-building me-2"></i>{{ warehouse.warehouse__warehouse_name }}</span>
+                                <span class="badge bg-primary rounded-pill">{{ warehouse.total_items }} units</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No warehouse inventory data available.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>Last updated: {% now "F j, Y, H:i" %}
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Additional Metrics Cards -->
+            <div class="card card-dashboard">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Inventory Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div id="warehouseChart" style="height: 250px;">
+                        <canvas id="warehouseDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Products to Reorder Section -->
+        <div class="col-lg-6">
+            <div class="card card-dashboard">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Products to Reorder</h5>
+                </div>
+                <div class="card-body">
+                    {% if products_to_reorder %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Warehouse</th>
+                                        <th>Stock</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in products_to_reorder %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'inventory:product-detail' item.product.product_id %}">
+                                                    {{ item.product.product_name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ item.warehouse.warehouse_name }}</td>
+                                            <td>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>{{ item.quantity_on_hand }} / {{ item.reorder_point }}</span>
+                                                    <span class="text-danger">{{ item.shortage }} needed</span>
+                                                </div>
+                                                <div class="progress">
+                                                    {% with stock_percentage=item.quantity_on_hand|floatformat:0 %}
+                                                    <div class="progress-bar {% if stock_percentage < item.reorder_point|floatformat:0|divisibleby:4 %}bg-danger{% elif stock_percentage < item.reorder_point|floatformat:0|divisibleby:2 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {% widthratio item.quantity_on_hand item.reorder_point 100 %}%;" 
+                                                         aria-valuenow="{% widthratio item.quantity_on_hand item.reorder_point 100 %}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
+                                                    </div>
+                                                    {% endwith %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if item.quantity_on_hand == 0 %}
+                                                    <span class="badge bg-danger">Out of Stock</span>
+                                                {% elif item.shortage > item.reorder_point|floatformat:0|divisibleby:2 %}
+                                                    <span class="badge bg-danger">Critical</span>
+                                                {% elif item.shortage > 0 %}
+                                                    <span class="badge bg-warning text-dark">Low Stock</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">In Stock</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success mb-0">
+                            <i class="fas fa-check-circle me-2"></i>All products are above reorder points. No immediate action required.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'purchasing:po_create' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-invoice me-1"></i>Create Purchase Order
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Reorder Recommendations -->
+            <div class="card card-dashboard">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Inventory Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    {% if products_to_reorder %}
+                        <ul class="list-group list-group-flush">
+                            {% for item in products_to_reorder|slice:":3" %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ item.product.product_name }}</h6>
+                                            <small class="text-muted">{{ item.warehouse.warehouse_name }}</small>
+                                        </div>
+                                        <a href="{% url 'analytics:eoq_parameters' product_id=item.product.product_id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-calculator me-1"></i>EOQ Details
+                                        </a>
+                                    </div>
+                                    
+                                    <div class="alert {% if item.shortage > item.reorder_point|floatformat:0|divisibleby:2 %}alert-critical{% else %}alert-reorder{% endif %} mt-2 mb-0">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <strong>Recommended Action:</strong> Order {{ item.shortage|add:item.product.eoq|floatformat:0 }} units 
+                                        ({{ item.shortage|floatformat:0 }} to meet reorder point + {{ item.product.eoq|floatformat:0 }} EOQ)
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        {% if products_to_reorder|length > 3 %}
+                            <div class="text-center mt-3">
+                                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#moreRecommendations">
+                                    <i class="fas fa-plus-circle me-1"></i>Show {{ products_to_reorder|length|add:-3 }} more recommendations
+                                </button>
+                            </div>
+                            
+                            <div class="collapse mt-3" id="moreRecommendations">
+                                <ul class="list-group list-group-flush">
+                                    {% for item in products_to_reorder|slice:"3:" %}
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ item.product.product_name }}</h6>
+                                                    <small class="text-muted">{{ item.warehouse.warehouse_name }}</small>
+                                                </div>
+                                                <a href="{% url 'analytics:eoq_parameters' product_id=item.product.product_id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-calculator me-1"></i>EOQ Details
+                                                </a>
+                                            </div>
+                                            
+                                            <div class="alert {% if item.shortage > item.reorder_point|floatformat:0|divisibleby:2 %}alert-critical{% else %}alert-reorder{% endif %} mt-2 mb-0">
+                                                <i class="fas fa-exclamation-circle me-2"></i>
+                                                <strong>Recommended Action:</strong> Order {{ item.shortage|add:item.product.eoq|floatformat:0 }} units 
+                                                ({{ item.shortage|floatformat:0 }} to meet reorder point + {{ item.product.eoq|floatformat:0 }} EOQ)
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No recommendations at this time. All inventory levels are adequate.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Function to convert hexadecimal color to rgba format
+        function hexToRgba(hex, alpha) {
+            var r = parseInt(hex.slice(1, 3), 16),
+                g = parseInt(hex.slice(3, 5), 16),
+                b = parseInt(hex.slice(5, 7), 16);
+            return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+        }
+        
+        // Get warehouse data for the chart
+        var warehouseData = {
+            labels: [{% for warehouse in warehouses %}'{{ warehouse.warehouse__warehouse_name }}',{% endfor %}],
+            datasets: [{
+                label: 'Total Items',
+                data: [{% for warehouse in warehouses %}{{ warehouse.total_items }},{% endfor %}],
+                backgroundColor: [
+                    '#0d6efd',
+                    '#6610f2',
+                    '#6f42c1',
+                    '#d63384',
+                    '#dc3545',
+                    '#fd7e14',
+                    '#ffc107',
+                    '#198754'
+                ],
+                borderWidth: 1
+            }]
+        };
+        
+        // Create warehouse distribution chart
+        var warehouseCtx = document.getElementById('warehouseDistributionChart').getContext('2d');
+        var warehouseChart = new Chart(warehouseCtx, {
+            type: 'pie',
+            data: warehouseData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 15
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.label || '';
+                                var value = context.parsed || 0;
+                                var total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                var percentage = Math.round((value / total) * 100);
+                                return label + ': ' + value + ' units (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

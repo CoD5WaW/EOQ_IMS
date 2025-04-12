@@ -1,0 +1,285 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Inventory Management System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --primary-hover: #3a56e8;
+            --secondary-color: #f8f9fa;
+            --text-color: #333333;
+            --light-text: #6c757d;
+            --box-shadow: rgba(17, 12, 46, 0.08) 0px 48px 100px 0px;
+            --error-bg: #fee2e2;
+            --error-color: #ef4444;
+            --success-bg: #dcfce7;
+            --success-color: #22c55e;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e9f2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color);
+            padding: 2rem 0;
+        }
+        
+        .login-container {
+            max-width: 480px;
+            width: 100%;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .login-card {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            position: relative;
+            border: none;
+        }
+        
+        .login-header {
+            padding: 2rem 2rem 1rem;
+            text-align: center;
+        }
+        
+        .login-logo {
+            background-color: var(--primary-color);
+            color: white;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 10px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .login-logo i {
+            font-size: 2rem;
+        }
+        
+        .login-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+        
+        .login-subtitle {
+            color: var(--light-text);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .login-body {
+            padding: 0 2rem 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .form-control {
+            height: 55px;
+            border-radius: 10px;
+            padding-left: 45px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .form-icon {
+            position: absolute;
+            left: 15px;
+            top: 17px;
+            color: var(--light-text);
+            font-size: 1.1rem;
+        }
+        
+        .login-btn {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            height: 55px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            box-shadow: 0 10px 15px rgba(67, 97, 238, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .login-btn:hover, .login-btn:focus {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .alert-danger {
+            background-color: var(--error-bg);
+            color: var(--error-color);
+        }
+        
+        .alert-success {
+            background-color: var(--success-bg);
+            color: var(--success-color);
+        }
+        
+        .alert-icon {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .validation-error {
+            background-color: var(--error-bg);
+            color: var(--error-color);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .login-decoration {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: rgba(67, 97, 238, 0.05);
+            top: -75px;
+            right: -75px;
+            z-index: 0;
+        }
+        
+        .login-decoration-2 {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(67, 97, 238, 0.08);
+            bottom: -50px;
+            left: -50px;
+            z-index: 0;
+        }
+
+        /* System messages at top */
+        .system-messages {
+            position: absolute;
+            top: -80px;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        
+        @media (max-width: 576px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
+            .login-header {
+                padding: 1.5rem 1.5rem 0.5rem;
+            }
+            
+            .login-body {
+                padding: 0 1.5rem 1.5rem;
+            }
+            
+            .system-messages {
+                top: -70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container login-container">
+        <!-- System messages properly positioned above the form -->
+        <div class="system-messages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} alert-icon"></i>
+                        <span>{{ message }}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        
+        <div class="login-card">
+            <div class="login-decoration"></div>
+            <div class="login-decoration-2"></div>
+            
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-boxes"></i>
+                </div>
+                <h2 class="login-title">Welcome Back</h2>
+                <p class="login-subtitle">Sign in to your Inventory Management account</p>
+            </div>
+            
+            <div class="login-body">
+                <form method="post" action="{% url 'authentication:login' %}">
+                    {% csrf_token %}
+                    
+                    <!-- Form validation errors properly styled inside the card -->
+                    {% if form.errors %}
+                        <div class="validation-error">
+                            <i class="fas fa-exclamation-circle alert-icon"></i>
+                            <span>Invalid username or password. Please try again.</span>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <i class="fas fa-user form-icon"></i>
+                        <input type="text" class="form-control" id="id_username" name="username" placeholder="Username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <i class="fas fa-lock form-icon"></i>
+                        <input type="password" class="form-control" id="id_password" name="password" placeholder="Password" required>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary login-btn">
+                            Sign In <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

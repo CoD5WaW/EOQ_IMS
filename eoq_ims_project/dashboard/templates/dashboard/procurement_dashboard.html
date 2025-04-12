@@ -1,0 +1,208 @@
+{% extends 'dashboard\base.html' %}
+
+{% block title %}Procurement Dashboard | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Procurement Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header and Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Procurement Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Order Status Summary -->
+                        <div class="col-md-8">
+                            <h6 class="text-muted mb-3">Purchase Orders by Status</h6>
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="orderStatusChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Suppliers -->
+                        <div class="col-md-4">
+                            <h6 class="text-muted mb-3">Most Active Suppliers</h6>
+                            <div class="list-group">
+                                {% for supplier in active_suppliers %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ supplier.supplier_name }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ supplier.order_count }} orders</span>
+                                </div>
+                                {% empty %}
+                                <div class="list-group-item">No active suppliers found</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Orders and Awaiting Delivery -->
+    <div class="row">
+        <!-- Recent Purchase Orders -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Recent Purchase Orders</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>PO #</th>
+                                    <th>Supplier</th>
+                                    <th>Order Date</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'purchasing:po_detail' order.po_id %}">PO-{{ order.po_id }}</a>
+                                    </td>
+                                    <td>{{ order.supplier.supplier_name }}</td>
+                                    <td>{{ order.order_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if order.po_status == 'ordered' %}bg-warning{% endif %}
+                                            {% if order.po_status == 'received' %}bg-success{% endif %}
+                                            {% if order.po_status == 'approved' %}bg-primary{% endif %}
+                                            {% if order.po_status == 'pending' %}bg-info{% endif %}
+                                            {% if order.po_status == 'cancelled' %}bg-danger{% endif %}
+                                            {% if order.po_status == 'draft' %}bg-secondary{% endif %}">
+                                            {{ order.get_po_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>${{ order.total_cost|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No purchase orders found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'purchasing:po_list' %}" class="btn btn-sm btn-primary">View All Orders</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Awaiting Delivery -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Awaiting Delivery</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>PO #</th>
+                                    <th>Supplier</th>
+                                    <th>Expected Delivery</th>
+                                    <th>Days Left</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in awaiting_delivery %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'purchasing:po_detail' order.po_id %}">PO-{{ order.po_id }}</a>
+                                    </td>
+                                    <td>{{ order.supplier.supplier_name }}</td>
+                                    <td>{{ order.expected_delivery|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% with days_left=order.expected_delivery|timeuntil %}
+                                            {% if "ago" in days_left %}
+                                                <span class="text-danger">Overdue</span>
+                                            {% else %}
+                                                {{ days_left }}
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No deliveries awaiting</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'purchasing:po_list' %}?status=ordered" class="btn btn-sm btn-warning">View All Pending Deliveries</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Chart for Purchase Order Status
+    document.addEventListener('DOMContentLoaded', function() {
+        // Order status chart
+        const orderStatusCanvas = document.getElementById('orderStatusChart');
+        
+        if (orderStatusCanvas) {
+            // Prepare data from the context
+            const orderStatusLabels = [];
+            const orderStatusData = [];
+            const backgroundColors = [
+                'rgba(0, 123, 255, 0.8)',     // Primary (approved)
+                'rgba(108, 117, 125, 0.8)',   // Secondary (draft)
+                'rgba(40, 167, 69, 0.8)',     // Success (received)
+                'rgba(255, 193, 7, 0.8)',     // Warning (ordered)
+                'rgba(23, 162, 184, 0.8)',    // Info (pending)
+                'rgba(220, 53, 69, 0.8)'      // Danger (cancelled)
+            ];
+            
+            {% for status in order_status_counts %}
+                orderStatusLabels.push('{{ status.po_status|capfirst }}');
+                orderStatusData.push({{ status.count }});
+            {% endfor %}
+            
+            const orderStatusChart = new Chart(orderStatusCanvas, {
+                type: 'bar',
+                data: {
+                    labels: orderStatusLabels,
+                    datasets: [{
+                        label: 'Number of Orders',
+                        data: orderStatusData,
+                        backgroundColor: backgroundColors.slice(0, orderStatusLabels.length),
+                        borderColor: backgroundColors.slice(0, orderStatusLabels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

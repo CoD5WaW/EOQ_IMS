@@ -1,0 +1,353 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Demand Analysis - EOQ IMS{% endblock %}
+
+{% block header_title %}Demand Analysis Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-data {
+        font-size: 1.1rem;
+    }
+    .card-value {
+        font-size: 1.8rem;
+        font-weight: 600;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+    .product-link {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+    .product-link:hover {
+        text-decoration: underline;
+    }
+    .demand-type-actual {
+        color: #198754;
+    }
+    .demand-type-forecast {
+        color: #0d6efd;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4 mb-lg-0">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Monthly Demand Trends (Past 6 Months)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="demandTrendsChart"></canvas>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex justify-content-center gap-4">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success me-2" style="width: 12px; height: 12px;"></span>
+                        <span>Actual Demand</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-2" style="width: 12px; height: 12px;"></span>
+                        <span>Forecasted Demand</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Demand Data Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-4">
+                        <div class="card-data">Products with Demand</div>
+                        <div class="card-value">{{ products_with_demand.count }}</div>
+                    </div>
+                    <div class="col-6 mb-4">
+                        <div class="card-data">Forecasted Products</div>
+                        <div class="card-value">{{ forecasted_products.count }}</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'analytics:demand_history_list' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-history me-2"></i>View Demand History
+                            </a>
+                            <a href="{% url 'analytics:bulk_demand_upload' %}" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Demand Data
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Demand Entries</h5>
+                <div>
+                    <span class="badge bg-success me-1">Actual</span>
+                    <span class="badge bg-primary">Forecast</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Period Date</th>
+                                <th>Quantity</th>
+                                <th>Type</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demand in recent_demand %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' demand.product.pk %}" class="product-link">
+                                        {{ demand.product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ demand.period_date|date:"M d, Y" }}</td>
+                                <td>{{ demand.quantity_demanded }}</td>
+                                <td>
+                                    {% if demand.demand_type == 'actual' %}
+                                    <span class="badge bg-success">Actual</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">Forecast</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ demand.notes|truncatechars:30|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">No recent demand entries available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'analytics:add_demand_history' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Demand Entry
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Products with Most Demand History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>History Entries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products_with_demand %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' product.pk %}" class="product-link">
+                                        {{ product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ product.category.name|default:"N/A" }}</td>
+                                <td>{{ product.history_count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3">No products with demand history.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Products with Forecast Data</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th> 
+                                <th>Forecast Entries</th>
+                                <th>Actual Entries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in forecasted_products %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' product.pk %}" class="product-link">
+                                        {{ product.product_name }}
+                                    </a>
+                                </td>
+                                <td class="demand-type-forecast">{{ product.forecast_count }}</td>
+                                <td class="demand-type-actual">{{ product.actual_count }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3">No products with forecast data.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Products with EOQ for Demand Planning</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>EOQ Value</th>
+                                <th>Annual Demand</th>
+                                <th>Holding Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products_with_eoq %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'inventory:product-detail' product.pk %}" class="product-link">
+                                        {{ product.product_name }}
+                                    </a>
+                                </td>
+                                <td>{{ product.category.name|default:"N/A" }}</td>
+                                <td>{{ product.eoq|floatformat:2 }}</td>
+                                <td>{{ product.eoq_parameters.annual_demand|floatformat:0 }}</td>
+                                <td>${{ product.eoq_parameters.holding_cost|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">No products with complete EOQ data available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white text-center">
+                <a href="{% url 'dashboard:eoq' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-right me-2"></i>Go to EOQ Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart configuration for demand trends
+        const trendsCtx = document.getElementById('demandTrendsChart').getContext('2d');
+        
+        const trendLabels = {{ trend_labels|safe }};
+        const actualValues = {{ actual_values|safe }};
+        const forecastValues = {{ forecast_values|safe }};
+        
+        const demandTrendsChart = new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [
+                    {
+                        label: 'Actual Demand',
+                        data: actualValues,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.2,
+                        fill: true
+                    },
+                    {
+                        label: 'Forecasted Demand',
+                        data: forecastValues,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.2,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Quantity'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

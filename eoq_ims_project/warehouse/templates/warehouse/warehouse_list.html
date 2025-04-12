@@ -1,0 +1,167 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Warehouses | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Warehouses{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-warehouse me-2"></i>Warehouse Locations</span>
+                <a href="{% url 'warehouse:warehouse_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add Warehouse
+                </a>
+            </div>
+            <div class="card-body">
+                <!-- Search Form -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <form method="GET" class="d-flex">
+                            <input type="text" name="search" class="form-control me-2" 
+                                   placeholder="Search warehouses..." value="{{ search_query }}">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Warehouses Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Storage Cost</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if page_obj %}
+                                {% for warehouse in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'warehouse:warehouse_detail' warehouse.pk %}" class="fw-semibold text-decoration-none">
+                                                {{ warehouse.warehouse_name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ warehouse.location|default:"-" }}</td>
+                                        <td>
+                                            {% if warehouse.active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if warehouse.storage_cost %}
+                                                ${{ warehouse.storage_cost }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'warehouse:warehouse_detail' warehouse.pk %}" class="btn btn-sm btn-outline-primary me-1" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'warehouse:warehouse_update' warehouse.pk %}" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'warehouse:warehouse_delete' warehouse.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No warehouses found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Warehouse pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        {% endif %}
+
+                        {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Warehouse Information
+            </div>
+            <div class="card-body">
+                <p>Warehouses are physical locations where your inventory is stored. Managing multiple warehouses allows you to:</p>
+                <ul>
+                    <li>Track inventory across different locations</li>
+                    <li>Optimize storage costs and distribution</li>
+                    <li>Improve order fulfillment efficiency</li>
+                </ul>
+                <p>Use the search function to quickly find specific warehouses. You can add new warehouses by clicking the "Add Warehouse" button.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Transaction #{{ transaction.transaction_id }} | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}Transaction Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transaction-badge {
+        font-size: 0.85rem;
+        padding: 0.25em 0.6em;
+    }
+    .receipt {
+        background-color: #28a745;
+        color: white;
+    }
+    .issue {
+        background-color: #dc3545;
+        color: white;
+    }
+    .adjustment_positive {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .adjustment_negative {
+        background-color: #ffc107;
+        color: black;
+    }
+    .transfer_in {
+        background-color: #6610f2;
+        color: white;
+    }
+    .transfer_out {
+        background-color: #fd7e14;
+        color: white;
+    }
+    .info-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .detail-card {
+        border-left: 4px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'inventory:transaction-list' %}">Transactions</a></li>
+                    <li class="breadcrumb-item active">Transaction #{{ transaction.transaction_id }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                Transaction #{{ transaction.transaction_id }}
+                <span class="badge transaction-badge {{ transaction.transaction_type }}">
+                    {{ transaction.get_transaction_type_display }}
+                </span>
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'inventory:transaction-list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Transactions
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Transaction Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Product</div>
+                                <div class="fw-bold">{{ transaction.product.product_name }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Warehouse</div>
+                                <div class="fw-bold">{{ transaction.warehouse.warehouse_name }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Transaction Type</div>
+                                <div>
+                                    <span class="badge transaction-badge {{ transaction.transaction_type }}">
+                                        {{ transaction.get_transaction_type_display }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Quantity</div>
+                                <div class="fw-bold">{{ transaction.quantity }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Transaction Date</div>
+                                <div>{{ transaction.transaction_date|date:"F d, Y H:i:s" }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="info-label">Reference</div>
+                                <div>
+                                    {% if transaction.reference_document %}
+                                        {{ transaction.reference_document }}{% if transaction.reference_id %}-{{ transaction.reference_id }}{% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if transaction.notes %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-2">
+                                <div class="info-label">Notes</div>
+                                <div class="border p-3 rounded bg-light">
+                                    {{ transaction.notes|linebreaks }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-0">
+                                <div class="info-label">Created At</div>
+                                <div>{{ transaction.created_at|date:"F d, Y H:i:s" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Product Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-light rounded p-3 d-inline-block">
+                            <i class="fas fa-box fa-3x text-primary"></i>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 40%">Product Name</th>
+                                <td>{{ transaction.product.product_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Product ID</th>
+                                <td>{{ transaction.product.product_id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Category</th>
+                                <td>{{ transaction.product.category.name|default:"Not Assigned" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Unit Cost</th>
+                                <td>${{ transaction.product.unit_cost }}</td>
+                            </tr>
+                            <tr>
+                                <th>Selling Price</th>
+                                <td>${{ transaction.product.selling_price }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'inventory:product-detail' transaction.product.product_id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-info-circle me-1"></i> View Product Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Warehouse Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-light rounded p-3 d-inline-block">
+                            <i class="fas fa-warehouse fa-3x text-secondary"></i>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <th style="width: 40%">Warehouse Name</th>
+                                <td>{{ transaction.warehouse.warehouse_name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Warehouse ID</th>
+                                <td>{{ transaction.warehouse.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Stock</th>
+                                <td>
+                                    {% with current_stock=transaction.product.inventories.get.quantity_on_hand %}
+                                        {{ current_stock }} units
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

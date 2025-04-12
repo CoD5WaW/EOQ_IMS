@@ -1,0 +1,134 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | EOQ Inventory Management System{% endblock %}
+
+{% block header_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-warehouse me-2"></i>{{ title }}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.warehouse_name.id_for_label }}" class="form-label">Warehouse Name *</label>
+                        {{ form.warehouse_name.errors }}
+                        <input type="text" name="{{ form.warehouse_name.name }}" 
+                               value="{{ form.warehouse_name.value|default:'' }}"
+                               id="{{ form.warehouse_name.id_for_label }}" 
+                               class="form-control {% if form.warehouse_name.errors %}is-invalid{% endif %}" 
+                               required>
+                        {% if form.warehouse_name.help_text %}
+                            <small class="form-text text-muted">{{ form.warehouse_name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.location.id_for_label }}" class="form-label">Location</label>
+                        {{ form.location.errors }}
+                        <input type="text" name="{{ form.location.name }}" 
+                               value="{{ form.location.value|default:'' }}"
+                               id="{{ form.location.id_for_label }}" 
+                               class="form-control {% if form.location.errors %}is-invalid{% endif %}">
+                        {% if form.location.help_text %}
+                            <small class="form-text text-muted">{{ form.location.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.address.id_for_label }}" class="form-label">Address</label>
+                        {{ form.address.errors }}
+                        <textarea name="{{ form.address.name }}" 
+                                  id="{{ form.address.id_for_label }}" 
+                                  class="form-control {% if form.address.errors %}is-invalid{% endif %}"
+                                  rows="3">{{ form.address.value|default:'' }}</textarea>
+                        {% if form.address.help_text %}
+                            <small class="form-text text-muted">{{ form.address.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.storage_cost.id_for_label }}" class="form-label">Storage Cost ($)</label>
+                        {{ form.storage_cost.errors }}
+                        <input type="number" name="{{ form.storage_cost.name }}" 
+                               value="{{ form.storage_cost.value|default:'' }}"
+                               id="{{ form.storage_cost.id_for_label }}" 
+                               class="form-control {% if form.storage_cost.errors %}is-invalid{% endif %}"
+                               step="0.01">
+                        {% if form.storage_cost.help_text %}
+                            <small class="form-text text-muted">{{ form.storage_cost.help_text }}</small>
+                        {% endif %}
+                        <div class="form-text">Cost per unit of storage (e.g., per square foot or per pallet)</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   name="{{ form.active.name }}" 
+                                   id="{{ form.active.id_for_label }}"
+                                   {% if form.active.value %}checked{% endif %}>
+                            <label class="form-check-label" for="{{ form.active.id_for_label }}">
+                                Active
+                            </label>
+                            {% if form.active.help_text %}
+                                <div class="form-text">{{ form.active.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Warehouse
+                        </button>
+                        <a href="{% url 'warehouse:warehouse_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle me-2"></i>Information
+            </div>
+            <div class="card-body">
+                <h6>About Warehouses</h6>
+                <p>Warehouses represent physical locations where your inventory is stored. Each warehouse can contain multiple products and inventory items.</p>
+                
+                <h6>Field Information:</h6>
+                <ul>
+                    <li><strong>Warehouse Name:</strong> A unique, descriptive name for the warehouse location.</li>
+                    <li><strong>Location:</strong> The general area or city where the warehouse is located.</li>
+                    <li><strong>Address:</strong> The complete physical address of the warehouse.</li>
+                    <li><strong>Storage Cost:</strong> The cost associated with storing items at this location (per unit).</li>
+                    <li><strong>Active:</strong> Indicates whether the warehouse is currently in use. Inactive warehouses aren't shown in certain reports or selection lists.</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> Storage costs are used in EOQ calculations to optimize inventory levels and order quantities.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'dashboard\base.html' %}
+{% load static %}
+
+{% block title %}Warehouse Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h2 mb-4">Warehouse Dashboard</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Warehouse Overview</h5>
+                    <div>
+                        <a href="{{ warehouse_list_url }}" class="btn btn-sm btn-outline-primary">View All</a>
+                        <a href="{{ warehouse_create_url }}" class="btn btn-sm btn-primary">Add Warehouse</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if warehouses %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Warehouse</th>
+                                        <th>Location</th>
+                                        <th>Unique Items</th>
+                                        <th>Total Quantity</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for warehouse in warehouses %}
+                                    <tr>
+                                        <td>{{ warehouse.warehouse_name }}</td>
+                                        <td>{{ warehouse.location }}</td>
+                                        <td>{{ warehouse.item_count }}</td>
+                                        <td>{{ warehouse.total_items }}</td>
+                                        <td>
+                                            <a href="{{ warehouse.detail_url }}" class="btn btn-sm btn-info">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No warehouses have been added yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Warehouses with Low Stock Items</h5>
+                </div>
+                <div class="card-body">
+                    {% if warehouses_with_low_stock %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Warehouse</th>
+                                        <th>Low Stock Items</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for warehouse in warehouses_with_low_stock %}
+                                    <tr>
+                                        <td>{{ warehouse.warehouse_name }}</td>
+                                        <td>
+                                            <span class="badge bg-danger">{{ warehouse.low_stock_count }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ warehouse.detail_url }}" class="btn btn-sm btn-info">View Items</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">No warehouses have low stock items.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Inventory Transfers</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_transfers %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Product</th>
+                                        <th>Warehouse</th>
+                                        <th>Type</th>
+                                        <th>Quantity</th>
+                                        <th>Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transfer in recent_transfers %}
+                                    <tr>
+                                        <td>{{ transfer.transaction_date|date:"M d, Y" }}</td>
+                                        <td>{{ transfer.product.product_name }}</td>
+                                        <td>{{ transfer.warehouse.warehouse_name }}</td>
+                                        <td>
+                                            {% if transfer.transaction_type == 'transfer_in' %}
+                                                <span class="badge bg-success">Transfer In</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Transfer Out</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ transfer.quantity }}</td>
+                                        <td>{{ transfer.reference_number }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No recent inventory transfers.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Warehouse Capacity Utilization</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:300px;">
+                        <canvas id="warehouseCapacityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data from Django
+        const warehouseNames = [
+            {% for warehouse in warehouses %}
+                "{{ warehouse.warehouse_name }}",
+            {% endfor %}
+        ];
+        
+        const itemCounts = [
+            {% for warehouse in warehouses %}
+                {{ warehouse.item_count }},
+            {% endfor %}
+        ];
+        
+        const totalItems = [
+            {% for warehouse in warehouses %}
+                {{ warehouse.total_items }},
+            {% endfor %}
+        ];
+        
+        // Create chart for warehouse capacity
+        const ctx = document.getElementById('warehouseCapacityChart').getContext('2d');
+        const warehouseCapacityChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: warehouseNames,
+                datasets: [
+                    {
+                        label: 'Unique Items',
+                        data: itemCounts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Total Quantity',
+                        data: totalItems,
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Warehouse'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
