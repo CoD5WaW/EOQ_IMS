@@ -4,6 +4,30 @@
 
 {% block header_title %}Product Details{% endblock %}
 
+{% block extra_css %}
+<style>
+    .product-image {
+        max-height: 300px;
+        object-fit: contain;
+    }
+    .thumbnail {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .thumbnail.active {
+        border-color: #0d6efd;
+    }
+    .thumbnail-container {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: 10px 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
@@ -34,6 +58,42 @@
 
 <div class="row mb-4">
     <div class="col-lg-8">
+        <!-- Product Images Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-images me-2"></i>Product Images
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="mainImageContainer" class="mb-3">
+                    {% if product.main_image %}
+                    <img src="{{ product.main_image.url }}" class="product-image" id="mainImage" alt="{{ product.product_name }}">
+                    {% else %}
+                    <div class="border rounded py-5">
+                        <i class="fas fa-image text-muted" style="font-size: 5rem;"></i>
+                        <p class="text-muted mt-3">No main image available</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Thumbnails -->
+                {% if images %}
+                <div class="thumbnail-container">
+                    {% if product.main_image %}
+                    <img src="{{ product.main_image.url }}" class="thumbnail me-2 active" 
+                         onclick="setMainImage('{{ product.main_image.url }}', this)" alt="Main image">
+                    {% endif %}
+                    
+                    {% for img in images %}
+                    <img src="{{ img.image.url }}" class="thumbnail me-2" 
+                         onclick="setMainImage('{{ img.image.url }}', this)" alt="{{ img.alt_text }}">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
         <!-- Product Details Card -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-light">
@@ -301,6 +361,18 @@
 
 {% block extra_js %}
 <script>
+    // Image gallery functionality
+    function setMainImage(imgSrc, thumbnail) {
+        document.getElementById('mainImage').src = imgSrc;
+        
+        // Update active thumbnail
+        const thumbnails = document.querySelectorAll('.thumbnail');
+        thumbnails.forEach(item => {
+            item.classList.remove('active');
+        });
+        thumbnail.classList.add('active');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Fetch demand chart data
         const chartContainer = document.getElementById('demand-chart-container');

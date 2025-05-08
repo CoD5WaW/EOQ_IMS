@@ -9,8 +9,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 
-from .models import Category, Product, Inventory, InventoryTransaction
-from .forms import CategoryForm, ProductForm, InventoryForm, InventoryTransactionForm
+from .models import Category, Product, ProductImage, Inventory, InventoryTransaction
+from .forms import (CategoryForm, ProductForm, ProductImageInlineFormSet, 
+                   InventoryForm, InventoryTransactionForm)
 
 import math
 from decimal import Decimal
@@ -98,6 +99,8 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
         context['transactions'] = InventoryTransaction.objects.filter(
             product=self.object
         ).order_by('-transaction_date')[:10]
+        # Get product images
+        context['images'] = self.object.additional_images.all()
         return context
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -115,12 +118,12 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ProductForm
     template_name = 'inventory/product_form.html'
     
-    def get_success_url(self):
-        return reverse_lazy('inventory:product-detail', kwargs={'pk': self.object.pk})
-    
     def form_valid(self, form):
         messages.success(self.request, 'Product updated successfully.')
         return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('inventory:product-detail', kwargs={'pk': self.object.pk})
 
 class ProductDeleteView(LoginRequiredMixin, DeleteView):
     model = Product
@@ -129,6 +132,19 @@ class ProductDeleteView(LoginRequiredMixin, DeleteView):
     
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Product deleted successfully.')
+        return super().delete(request, *args, **kwargs)
+
+# Product Image Views
+class ProductImageDeleteView(LoginRequiredMixin, DeleteView):
+    model = ProductImage
+    template_name = 'inventory/product_image_confirm_delete.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('inventory:product-update', kwargs={'pk': self.object.product.pk})
+    
+    def delete(self, request, *args, **kwargs):
+        product_id = self.get_object().product.pk
+        messages.success(request, 'Product image deleted successfully.')
         return super().delete(request, *args, **kwargs)
 
 # Inventory Views

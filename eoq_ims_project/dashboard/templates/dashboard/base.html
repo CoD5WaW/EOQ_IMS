@@ -11,6 +11,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/base_styles.css' %}">
+    <style>
+        /* Scrollable sidebar styles */
+        #sidebar {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 10px;
+        }
+        
+        .sidebar-footer {
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Scrollbar styling */
+        .sidebar-content::-webkit-scrollbar {
+            width: 5px;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        
+        .sidebar-content::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -22,148 +56,154 @@
             </span>
         </div>
 
-        <ul class="list-unstyled components">
-            <li {% if request.path == '/' %}class="active"{% endif %}>
-                <a href="{% url 'dashboard:dashboard' %}">
-                    <i class="fas fa-tachometer-alt nav-icon"></i> Dashboard
-                </a>
-            </li>
-            
-            <li {% if 'inventory' in request.path %}class="active"{% endif %}>
-                <a href="#inventorySubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'inventory' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
-                    <i class="fas fa-warehouse nav-icon"></i> Inventory
-                </a>
-                <ul class="collapse list-unstyled {% if 'inventory' in request.path %}show{% endif %}" id="inventorySubmenu">
-                    <li>
-                        <a href="{% url 'dashboard:inventory' %}">
-                            <i class="fas fa-chart-pie nav-icon"></i> Overview
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'inventory:category-list' %}">
-                            <i class="fas fa-tags nav-icon"></i> Categories
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'inventory:product-list' %}">
-                            <i class="fas fa-box nav-icon"></i> Products
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'inventory:inventory-list' %}">
-                            <i class="fas fa-layer-group nav-icon"></i> Stock Levels
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'inventory:transaction-list' %}">
-                            <i class="fas fa-exchange-alt nav-icon"></i> Transactions
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            
-            <li {% if 'purchasing' in request.path %}class="active"{% endif %}>
-                <a href="#purchasingSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'purchasing' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
-                    <i class="fas fa-shopping-cart nav-icon"></i> Purchasing
-                </a>
-                <ul class="collapse list-unstyled {% if 'purchasing' in request.path %}show{% endif %}" id="purchasingSubmenu">
-                    <li>
-                        <a href="{% url 'dashboard:procurement' %}">
-                            <i class="fas fa-chart-line nav-icon"></i> Overview
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'purchasing:supplier_list' %}">
-                            <i class="fas fa-building nav-icon"></i> Suppliers
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'purchasing:po_list' %}">
-                            <i class="fas fa-file-invoice nav-icon"></i> Purchase Orders
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            
-            <li {% if 'warehouse' in request.path %}class="active"{% endif %}>
-                <a href="#warehouseSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'warehouse' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
-                    <i class="fas fa-truck-loading nav-icon"></i> Warehouse
-                </a>
-                <ul class="collapse list-unstyled {% if 'warehouse' in request.path %}show{% endif %}" id="warehouseSubmenu">
-                    <li>
-                        <a href="{% url 'dashboard:warehouse' %}">
-                            <i class="fas fa-chart-bar nav-icon"></i> Overview
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'warehouse:warehouse_list' %}">
-                            <i class="fas fa-building nav-icon"></i> Warehouses
-                        </a>
-                    </li>
-                </ul>
-            </li>
-                        
-            <li {% if 'analytics' in request.path %}class="active"{% endif %}>
-                <a href="#analyticsSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'analytics' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
-                    <i class="fas fa-chart-line nav-icon"></i> Analytics
-                </a>
-                <ul class="collapse list-unstyled {% if 'analytics' in request.path %}show{% endif %}" id="analyticsSubmenu">
-                    <li>
-                        <a href="{% url 'dashboard:eoq' %}">
-                            <i class="fas fa-calculator nav-icon"></i> EOQ Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'dashboard:demand' %}">
-                            <i class="fas fa-chart-area nav-icon"></i> Demand Dashboard
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'analytics:eoq_parameters_selection' %}">
-                            <i class="fas fa-sliders-h nav-icon"></i> EOQ Parameters
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'analytics:demand_history_list' %}">
-                            <i class="fas fa-history nav-icon"></i> Demand History
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'analytics:inventory_analysis' %}">
-                            <i class="fas fa-search-dollar nav-icon"></i> Inventory Analysis
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'analytics:bulk_demand_upload' %}">
-                            <i class="fas fa-upload nav-icon"></i> Upload Demand Data
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-
-        <ul class="list-unstyled components mt-auto">
-            {% if request.user.is_staff %}
-            <li>
-                <a href="{% url 'admin:index' %}">
-                    <i class="fas fa-tools nav-icon"></i> Admin Interface
-                </a>
-            </li>
-            {% endif %}
-            <li>
-                <a href="{% url 'user:profile' %}">
-                    <i class="fas fa-user-circle nav-icon"></i> My Profile
-                </a>
-            </li>
-            <li>
-                <form method="post" action="{% url 'authentication:logout' %}" id="logout-form-sidebar" style="display: inline;">
-                    {% csrf_token %}
-                    <a href="#" onclick="document.getElementById('logout-form-sidebar').submit(); return false;">
-                        <i class="fas fa-sign-out-alt nav-icon"></i> Logout
+        <!-- Scrollable sidebar content -->
+        <div class="sidebar-content">
+            <ul class="list-unstyled components">
+                <li {% if request.path == '/' %}class="active"{% endif %}>
+                    <a href="{% url 'dashboard:dashboard' %}">
+                        <i class="fas fa-tachometer-alt nav-icon"></i> Dashboard
                     </a>
-                </form>
-            </li>
-        </ul>
+                </li>
+                
+                <li {% if 'inventory' in request.path %}class="active"{% endif %}>
+                    <a href="#inventorySubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'inventory' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-warehouse nav-icon"></i> Inventory
+                    </a>
+                    <ul class="collapse list-unstyled {% if 'inventory' in request.path %}show{% endif %}" id="inventorySubmenu">
+                        <li>
+                            <a href="{% url 'dashboard:inventory' %}">
+                                <i class="fas fa-chart-pie nav-icon"></i> Overview
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'inventory:category-list' %}">
+                                <i class="fas fa-tags nav-icon"></i> Categories
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'inventory:product-list' %}">
+                                <i class="fas fa-box nav-icon"></i> Products
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'inventory:inventory-list' %}">
+                                <i class="fas fa-layer-group nav-icon"></i> Stock Levels
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'inventory:transaction-list' %}">
+                                <i class="fas fa-exchange-alt nav-icon"></i> Transactions
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <li {% if 'purchasing' in request.path %}class="active"{% endif %}>
+                    <a href="#purchasingSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'purchasing' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-shopping-cart nav-icon"></i> Purchasing
+                    </a>
+                    <ul class="collapse list-unstyled {% if 'purchasing' in request.path %}show{% endif %}" id="purchasingSubmenu">
+                        <li>
+                            <a href="{% url 'dashboard:procurement' %}">
+                                <i class="fas fa-chart-line nav-icon"></i> Overview
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'purchasing:supplier_list' %}">
+                                <i class="fas fa-building nav-icon"></i> Suppliers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'purchasing:po_list' %}">
+                                <i class="fas fa-file-invoice nav-icon"></i> Purchase Orders
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <li {% if 'warehouse' in request.path %}class="active"{% endif %}>
+                    <a href="#warehouseSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'warehouse' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-truck-loading nav-icon"></i> Warehouse
+                    </a>
+                    <ul class="collapse list-unstyled {% if 'warehouse' in request.path %}show{% endif %}" id="warehouseSubmenu">
+                        <li>
+                            <a href="{% url 'dashboard:warehouse' %}">
+                                <i class="fas fa-chart-bar nav-icon"></i> Overview
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'warehouse:warehouse_list' %}">
+                                <i class="fas fa-building nav-icon"></i> Warehouses
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                            
+                <li {% if 'analytics' in request.path %}class="active"{% endif %}>
+                    <a href="#analyticsSubmenu" data-bs-toggle="collapse" aria-expanded="{% if 'analytics' in request.path %}true{% else %}false{% endif %}" class="dropdown-toggle">
+                        <i class="fas fa-chart-line nav-icon"></i> Analytics
+                    </a>
+                    <ul class="collapse list-unstyled {% if 'analytics' in request.path %}show{% endif %}" id="analyticsSubmenu">
+                        <li>
+                            <a href="{% url 'dashboard:eoq' %}">
+                                <i class="fas fa-calculator nav-icon"></i> EOQ Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'dashboard:demand' %}">
+                                <i class="fas fa-chart-area nav-icon"></i> Demand Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:eoq_parameters_selection' %}">
+                                <i class="fas fa-sliders-h nav-icon"></i> EOQ Parameters
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:demand_history_list' %}">
+                                <i class="fas fa-history nav-icon"></i> Demand History
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:inventory_analysis' %}">
+                                <i class="fas fa-search-dollar nav-icon"></i> Inventory Analysis
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'analytics:bulk_demand_upload' %}">
+                                <i class="fas fa-upload nav-icon"></i> Upload Demand Data
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Fixed footer for the sidebar -->
+        <div class="sidebar-footer">
+            <ul class="list-unstyled components mb-0">
+                {% if request.user.is_staff %}
+                <li>
+                    <a href="{% url 'admin:index' %}">
+                        <i class="fas fa-tools nav-icon"></i> Admin Interface
+                    </a>
+                </li>
+                {% endif %}
+                <li>
+                    <a href="{% url 'user:profile' %}">
+                        <i class="fas fa-user-circle nav-icon"></i> My Profile
+                    </a>
+                </li>
+                <li>
+                    <form method="post" action="{% url 'authentication:logout' %}" id="logout-form-sidebar" style="display: inline;">
+                        {% csrf_token %}
+                        <a href="#" onclick="document.getElementById('logout-form-sidebar').submit(); return false;">
+                            <i class="fas fa-sign-out-alt nav-icon"></i> Logout
+                        </a>
+                    </form>
+                </li>
+            </ul>
+        </div>
     </nav>
 
     <!-- Header -->

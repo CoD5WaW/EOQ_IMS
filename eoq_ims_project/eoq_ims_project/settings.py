@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'eoq_ims_db',
         'USER': 'postgres',
-        'PASSWORD': 'Loww11',
+        'PASSWORD': 'sayl18',
         'HOST': 'localhost',
         'PORT': '5432',
     }
